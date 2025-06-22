@@ -8,17 +8,25 @@ const texts = [
 ];
 
 const icons = ["❤️", "💖", "💝", "💗", "🌹", "✨", "💫", "⭐"];
-const colors = ["#ff69b4", "#ff1493", "#ff007f", "#ff69b4", "#ffb6c1"];
+const colors = ["#ffffff", "#ff69b4"]; // Chỉ màu trắng và hồng
 
 const container = document.getElementById("container");
 const scene = document.getElementById("scene");
-const maxElements = 50;
+let maxElements = 50;
 let rotateX = 0,
   rotateY = 0;
 let scale = 1;
 let isDragging = false;
 let startX, startY, lastX, lastY;
 const textElements = [];
+
+// Detect mobile device
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+// Adjust settings for mobile
+if (isMobile) {
+  maxElements = 30; // Reduce elements on mobile for better performance
+}
 
 function createTextContainer() {
   const textContainer = document.createElement("div");
@@ -38,6 +46,9 @@ function createFloatingText(container) {
   } else {
     element.innerText = texts[Math.floor(Math.random() * texts.length)];
   }
+
+  // Chỉ sử dụng màu trắng và hồng
+  element.style.color = Math.random() < 0.5 ? "#ffffff" : "#ff69b4";
 
   // Thiết lập layers và vị trí
   const depthLayers = [
@@ -68,20 +79,17 @@ function createFloatingText(container) {
     : 250;
   const randomZ = baseZ + (Math.random() * 50 - 25); // Thêm độ ngẫu nhiên cho độ sâu
 
-  // Hiệu ứng màu sắc và độ trong suốt
+  // Hiệu ứng màu sắc và độ trong suốt - chỉ trắng và hồng
   const depthFactor = Math.abs(randomZ) / 500;
-  const hue = 330 + Math.random() * 30;
-  const saturation = 100 - depthFactor * 15;
-  const lightness = 85 - depthFactor * 25;
-
+  const isWhite = Math.random() < 0.5;
+  const baseColor = isWhite ? "#ffffff" : "#ff69b4";
+  
   // Set opacity ban đầu là 0 để fade in
   element.style.opacity = "0";
-  element.style.color = `hsla(${hue}, ${saturation}%, ${lightness}%, ${
-    1 - depthFactor * 0.15
-  })`;
+  element.style.color = baseColor;
 
-  // Tăng cường hiệu ứng phát sáng
-  const glowIntensity = 1 - depthFactor * 0.4;
+  // Tăng cường hiệu ứng phát sáng (giảm trên mobile)
+  const glowIntensity = isMobile ? (1 - depthFactor * 0.2) : (1 - depthFactor * 0.4);
   element.style.textShadow = `
         0 0 ${20 * glowIntensity}px currentColor,
         0 0 ${30 * glowIntensity}px currentColor,
@@ -102,7 +110,7 @@ function createFloatingText(container) {
   container.appendChild(element);
 
   // Tính toán các thông số chuyển động
-  const baseSpeed = 0.05;
+  const baseSpeed = isMobile ? 0.03 : 0.05; // Slower on mobile
   const randomFactor = Math.random() * 0.08;
   const layerSpeedFactor = selectedLayer.includes("1")
     ? 0.7
@@ -139,6 +147,7 @@ function createFloatingText(container) {
     rotationOffset: initialRotation,
   });
 }
+
 function updateElements() {
   const textContainer = scene.querySelector(".text-container");
   if (!textContainer) return;
@@ -153,11 +162,12 @@ function updateElements() {
     const easedSpeed = text.speed * (1 - Math.pow(fallProgress, 2) * 0.3);
     text.y += easedSpeed;
 
-    // Tạo chuyển động lắc tự nhiên
+    // Tạo chuyển động lắc tự nhiên (giảm trên mobile)
     const time = Date.now() * text.wobbleSpeed;
+    const wobbleMultiplier = isMobile ? 0.5 : 1;
     const horizontalWobble =
-      Math.sin(time) * text.wobbleAmount * (1 - fallProgress);
-    const verticalWobble = Math.cos(time * 1.5) * 0.3 * (1 - fallProgress);
+      Math.sin(time) * text.wobbleAmount * (1 - fallProgress) * wobbleMultiplier;
+    const verticalWobble = Math.cos(time * 1.5) * 0.3 * (1 - fallProgress) * wobbleMultiplier;
 
     // Hiệu ứng xoay nhẹ theo độ sâu
     const rotateAmount =
@@ -196,7 +206,8 @@ function updateElements() {
 }
 
 function createParticles() {
-  for (let i = 0; i < 200; i++) {
+  const particleCount = isMobile ? 100 : 200; // Fewer particles on mobile
+  for (let i = 0; i < particleCount; i++) {
     const particle = document.createElement("div");
     particle.className = "particle";
     const size = Math.random() * 3 + 1;
@@ -223,19 +234,9 @@ function init() {
   updateElements();
 }
 
-// Đổi màu chữ động giữa trắng và hồng
-function animateFloatingTextColors() {
-  const floatingTexts = document.querySelectorAll(".floating-text");
-  floatingTexts.forEach((el) => {
-    // Random 50% trắng, 50% hồng
-    el.style.color = Math.random() < 0.5 ? "#fff" : "#ff69b4";
-  });
-  // Gọi lại sau mỗi 1-2 giây (tuỳ ý)
-  setTimeout(animateFloatingTextColors, 1200);
-}
-animateFloatingTextColors();
-
+// Mouse events for desktop
 container.addEventListener("mousedown", (e) => {
+  if (isMobile) return; // Skip on mobile
   isDragging = true;
   startX = e.clientX;
   startY = e.clientY;
@@ -244,7 +245,7 @@ container.addEventListener("mousedown", (e) => {
 });
 
 container.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
+  if (!isDragging || isMobile) return;
   const deltaX = e.clientX - startX;
   const deltaY = e.clientY - startY;
   rotateY = lastX + deltaX * 0.5;
@@ -256,10 +257,50 @@ container.addEventListener("mouseup", () => (isDragging = false));
 container.addEventListener("mouseleave", () => (isDragging = false));
 
 container.addEventListener("wheel", (e) => {
+  if (isMobile) return; // Skip on mobile
   e.preventDefault();
   const delta = e.deltaY * -0.001;
   scale = Math.min(Math.max(0.5, scale + delta), 2);
   updateSceneTransform();
+});
+
+// Touch events for mobile
+let lastTouchX, lastTouchY;
+container.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 1) {
+    isDragging = true;
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+    lastX = rotateY;
+    lastY = rotateX;
+  }
+});
+
+container.addEventListener("touchmove", (e) => {
+  if (!isDragging || e.touches.length !== 1) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - lastTouchX;
+  const deltaY = touch.clientY - lastTouchY;
+  rotateY = lastX + deltaX * 0.5;
+  rotateX = lastY + deltaY * 0.5;
+  updateSceneTransform();
+});
+
+container.addEventListener("touchend", () => {
+  isDragging = false;
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  // Recalculate viewport dimensions
+  const viewportWidth = window.innerWidth;
+  const isMobileNow = viewportWidth <= 768;
+  
+  // Update mobile detection if needed
+  if (isMobile !== isMobileNow) {
+    location.reload(); // Simple solution: reload on orientation change
+  }
 });
 
 function updateSceneTransform() {
@@ -273,4 +314,5 @@ function updateSceneTransform() {
   }
 }
 
-init();
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);

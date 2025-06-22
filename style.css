@@ -21,6 +21,14 @@ html {
   cursor: grab;
 }
 
+/* Touch cursor for mobile */
+@media (max-width: 768px) {
+  #container {
+    cursor: default;
+    touch-action: manipulation;
+  }
+}
+
 #scene {
   width: 100%;
   height: 100%;
@@ -39,14 +47,12 @@ html {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-size: clamp(25px, 6vw, 40px); /* <-- chỉnh cỡ chữ ở đây */
-  font-weight: bold; /* <-- chỉnh độ đậm ở đây */
+  font-size: clamp(25px, 6vw, 40px);
+  font-weight: bold;
   white-space: nowrap;
   transition: transform 0.1s ease-out;
   pointer-events: none;
-  text-shadow: 0 0 5px #ffffff;
-  /* Bạn có thể thêm dòng sau để đổi kiểu chữ: */
-  /* font-family: 'Segoe UI', Arial, sans-serif; */
+  /* Text shadow sẽ được set động trong JavaScript với màu trắng hoặc hồng */
 }
 
 .particle {
@@ -68,8 +74,60 @@ html {
   }
 }
 
-@media (max-width: 600px) {
+/* Responsive adjustments */
+@media (max-width: 768px) {
   .floating-text {
     font-size: clamp(14px, 7vw, 24px);
+  }
+  
+  /* Reduce animation intensity on mobile for better performance */
+  .floating-text {
+    transition: transform 0.2s ease-out;
+  }
+  
+  /* Adjust perspective for mobile */
+  body, html {
+    perspective: 600px;
+  }
+}
+
+@media (max-width: 576px) {
+  .floating-text {
+    font-size: clamp(12px, 6vw, 20px);
+  }
+  
+  /* Further reduce perspective for small screens */
+  body, html {
+    perspective: 400px;
+  }
+}
+
+/* Bootstrap responsive utilities override */
+@media (max-width: 768px) {
+  .d-md-none {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .d-md-none {
+    display: none !important;
+  }
+}
+
+/* Ensure full viewport on all devices */
+.container-fluid {
+  height: 100vh;
+  max-width: none;
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  #container {
+    cursor: default;
+  }
+  
+  .floating-text {
+    pointer-events: none;
   }
 }
